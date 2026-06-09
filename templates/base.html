@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Diamond Edge — MLB Betting Analysis{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <a href="/" class="logo">
+                <span class="logo-icon">◆</span>
+                <span class="logo-text">Diamond<span class="logo-accent">Edge</span></span>
+            </a>
+            <nav class="header-nav">
+                <span class="nav-label">MLB Moneyline Analysis</span>
+                <a href="/refresh" class="refresh-btn" title="Force refresh all data">↻ Refresh Data</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <span>Data sourced from Baseball Reference · For informational purposes only</span>
+            <span class="footer-mono">Built with Pythagorean · Log5 · Poisson</span>
+        </div>
+    </footer>
+</body>
+</html>

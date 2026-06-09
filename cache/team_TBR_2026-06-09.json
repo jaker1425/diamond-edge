@@ -1,0 +1,18 @@
+{
+  "abbr": "TBR",
+  "wins": 40,
+  "losses": 40,
+  "win_pct": 0.5,
+  "games_played": 80,
+  "runs_scored": 350,
+  "runs_allowed": 350,
+  "batting_avg": 0.248,
+  "obp": 0.318,
+  "slg": 0.408,
+  "ops": 0.726,
+  "home_runs": 80,
+  "era": 4.2,
+  "whip": 1.28,
+  "k9": 8.5,
+  "bb9": 3.1
+}

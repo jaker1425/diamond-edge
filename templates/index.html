@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="dashboard-date">{{ today }}</div>
+    <div class="dashboard-meta">
+        <span class="meta-stat">{{ analyses|length }} Games Today</span>
+        {% if value_bets > 0 %}
+        <span class="meta-stat value-alert">{{ value_bets }} Value Bet{% if value_bets != 1 %}s{% endif %} Found</span>
+        {% else %}
+        <span class="meta-stat">No Value Bets Today</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="model-legend">
+    <span class="legend-label">Models:</span>
+    <span class="legend-item pyth">Pythagorean <em>25%</em></span>
+    <span class="legend-sep">+</span>
+    <span class="legend-item log5">Log5 <em>35%</em></span>
+    <span class="legend-sep">+</span>
+    <span class="legend-item pois">Poisson <em>40%</em></span>
+    <span class="legend-sep">=</span>
+    <span class="legend-item blend">Blended Prediction</span>
+</div>
+
+<div class="games-grid">
+{% for a in analyses %}
+    {% if a.prediction %}
+    <a href="/game/{{ loop.index0 }}" class="game-card {% if a.edge.home.is_value_bet or a.edge.away.is_value_bet %}has-value{% endif %}">
+        <div class="card-top">
+            <div class="matchup">
+                <div class="team away-team">
+                    <span class="team-abbr">{{ a.game.away_abbr }}</span>
+                    <span class="team-name">{{ a.game.away_team }}</span>
+                    <span class="team-record">{{ a.away_stats.wins|int }}-{{ a.away_stats.losses|int }}</span>
+                </div>
+                <div class="at-sign">@</div>
+                <div class="team home-team">
+                    <span class="team-abbr">{{ a.game.home_abbr }}</span>
+                    <span class="team-name">{{ a.game.home_team }}</span>
+                    <span class="team-record">{{ a.home_stats.wins|int }}-{{ a.home_stats.losses|int }}</span>
+                </div>
+            </div>
+            <div class="game-time">{{ a.game.game_time }}</div>
+        </div>
+
+        <div class="prob-bar-section">
+            <div class="prob-label">
+                <span>{{ a.game.away_abbr }} {{ (a.prediction.away_win_prob * 100)|round(1) }}%</span>
+                <span>{{ a.game.home_abbr }} {{ (a.prediction.home_win_prob * 100)|round(1) }}%</span>
+            </div>
+            <div class="prob-bar">
+                <div class="prob-fill away-fill" style="width: {{ (a.prediction.away_win_prob * 100)|round(1) }}%"></div>
+                <div class="prob-fill home-fill" style="width: {{ (a.prediction.home_win_prob * 100)|round(1) }}%"></div>
+            </div>
+            <div class="ci-label">
+                95% CI: {{ (a.prediction.ci_lower * 100)|round(1) }}% – {{ (a.prediction.ci_upper * 100)|round(1) }}% (home)
+                · Model agreement: <strong>{{ a.prediction.model_agreement }}</strong>
+            </div>
+        </div>
+
+        <div class="card-models">
+            <div class="model-row">
+                <span class="model-name pyth">Pythagorean</span>
+                <span class="model-prob">{{ (a.prediction.models.pythagorean.home_win_prob * 100)|round(1) }}% home</span>
+            </div>
+            <div class="model-row">
+                <span class="model-name log5">Log5</span>
+                <span class="model-prob">{{ (a.prediction.models.log5.home_win_prob * 100)|round(1) }}% home</span>
+            </div>
+            <div class="model-row">
+                <span class="model-name pois">Poisson</span>
+                <span class="model-prob">{{ (a.prediction.models.poisson.home_win_prob * 100)|round(1) }}% home</span>
+            </div>
+        </div>
+
+        <div class="card-edge">
+            <div class="edge-item {% if a.edge.home.is_value_bet %}value-bet{% elif a.edge.home.recommendation == 'LEAN' %}lean{% endif %}">
+                <span class="edge-team">{{ a.game.home_abbr }}</span>
+                <span class="edge-ml">ML {{ a.edge.home.our_implied_ml }}</span>
+                <span class="edge-pct">{{ a.edge.home.edge_pct }}% edge</span>
+                <span class="rec-badge {{ a.edge.home.recommendation|lower }}">{{ a.edge.home.recommendation }}</span>
+            </div>
+            <div class="edge-item {% if a.edge.away.is_value_bet %}value-bet{% elif a.edge.away.recommendation == 'LEAN' %}lean{% endif %}">
+                <span class="edge-team">{{ a.game.away_abbr }}</span>
+                <span class="edge-ml">ML {{ a.edge.away.our_implied_ml }}</span>
+                <span class="edge-pct">{{ a.edge.away.edge_pct }}% edge</span>
+                <span class="rec-badge {{ a.edge.away.recommendation|lower }}">{{ a.edge.away.recommendation }}</span>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <span class="view-detail">View full breakdown →</span>
+        </div>
+    </a>
+    {% else %}
+    <div class="game-card error-card">
+        <div class="matchup">
+            <strong>{{ a.game.away_abbr }} @ {{ a.game.home_abbr }}</strong>
+        </div>
+        <p class="error-msg">Analysis unavailable: {{ a.error }}</p>
+    </div>
+    {% endif %}
+{% endfor %}
+</div>
+{% endblock %}

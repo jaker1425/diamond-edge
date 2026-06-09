@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+{% block title %}{{ result.game.away_abbr }} @ {{ result.game.home_abbr }} — Diamond Edge{% endblock %}
+
+{% block content %}
+{% set g = result.game %}
+{% set p = result.prediction %}
+{% set e = result.edge %}
+{% set hs = result.home_stats %}
+{% set as = result.away_stats %}
+{% set pw = p.models.pythagorean.workings %}
+{% set lw = p.models.log5.workings %}
+{% set poiw = p.models.poisson.workings %}
+
+<div class="detail-header">
+    <a href="/" class="back-link">← All Games</a>
+    <div class="detail-matchup">
+        <span class="d-team away">{{ g.away_team }} <small>{{ g.away_abbr }}</small></span>
+        <span class="d-at">@</span>
+        <span class="d-team home">{{ g.home_team }} <small>{{ g.home_abbr }}</small></span>
+    </div>
+    <div class="detail-meta">{{ g.game_time }} · {{ g.home_pitcher }} vs {{ g.away_pitcher }}</div>
+</div>
+
+<!-- FINAL VERDICT -->
+<section class="section verdict-section">
+    <h2 class="section-title">Final Prediction</h2>
+    <div class="verdict-grid">
+        <div class="verdict-team {% if e.away.is_value_bet %}value{% endif %}">
+            <div class="vt-abbr">{{ g.away_abbr }}</div>
+            <div class="vt-prob">{{ (p.away_win_prob * 100)|round(1) }}%</div>
+            <div class="vt-ml">Fair ML: {{ e.away.our_implied_ml }}</div>
+            <div class="vt-edge">Edge: {{ e.away.edge_pct }}%</div>
+            <div class="vt-rec rec-{{ e.away.recommendation|lower }}">{{ e.away.recommendation }}</div>
+        </div>
+
+        <div class="verdict-center">
+            <div class="blend-formula">{{ p.blend_formula }}</div>
+            <div class="ci-display">
+                95% Confidence Interval (home win)<br>
+                <strong>{{ (p.ci_lower * 100)|round(1) }}% — {{ (p.ci_upper * 100)|round(1) }}%</strong>
+            </div>
+            <div class="model-agree">Model Agreement: <strong>{{ p.model_agreement }}</strong>
+                <small>(σ = {{ p.std_across_models }})</small>
+            </div>
+        </div>
+
+        <div class="verdict-team {% if e.home.is_value_bet %}value{% endif %}">
+            <div class="vt-abbr">{{ g.home_abbr }} <small class="home-tag">HOME</small></div>
+            <div class="vt-prob">{{ (p.home_win_prob * 100)|round(1) }}%</div>
+            <div class="vt-ml">Fair ML: {{ e.home.our_implied_ml }}</div>
+            <div class="vt-edge">Edge: {{ e.home.edge_pct }}%</div>
+            <div class="vt-rec rec-{{ e.home.recommendation|lower }}">{{ e.home.recommendation }}</div>
+        </div>
+    </div>
+</section>
+
+<!-- MODEL COMPARISON -->
+<section class="section">
+    <h2 class="section-title">Model Comparison</h2>
+    <div class="model-compare-table">
+        <div class="mct-header">
+            <span>Model</span>
+            <span>Weight</span>
+            <span>{{ g.away_abbr }} Win%</span>
+            <span>{{ g.home_abbr }} Win%</span>
+            <span>Contribution (home)</span>
+        </div>
+        <div class="mct-row pyth-row">
+            <span class="mct-name pyth">Pythagorean</span>
+            <span>25%</span>
+            <span>{{ (p.models.pythagorean.away_win_prob * 100)|round(1) }}%</span>
+            <span>{{ (p.models.pythagorean.home_win_prob * 100)|round(1) }}%</span>
+            <span class="mono">{{ p.models.pythagorean.weighted_contribution }}</span>
+        </div>
+        <div class="mct-row log5-row">
+            <span class="mct-name log5">Log5</span>
+            <span>35%</span>
+            <span>{{ (p.models.log5.away_win_prob * 100)|round(1) }}%</span>
+            <span>{{ (p.models.log5.home_win_prob * 100)|round(1) }}%</span>
+            <span class="mono">{{ p.models.log5.weighted_contribution }}</span>
+        </div>
+        <div class="mct-row pois-row">
+            <span class="mct-name pois">Poisson</span>
+            <span>40%</span>
+            <span>{{ (p.models.poisson.away_win_prob * 100)|round(1) }}%</span>
+            <span>{{ (p.models.poisson.home_win_prob * 100)|round(1) }}%</span>
+            <span class="mono">{{ p.models.poisson.weighted_contribution }}</span>
+        </div>
+        <div class="mct-row total-row">
+            <span><strong>Blended</strong></span>
+            <span>100%</span>
+            <span><strong>{{ (p.away_win_prob * 100)|round(1) }}%</strong></span>
+            <span><strong>{{ (p.home_win_prob * 100)|round(1) }}%</strong></span>
+            <span class="mono"><strong>{{ p.home_win_prob }}</strong></span>
+        </div>
+    </div>
+</section>
+
+<!-- PYTHAGOREAN WORKINGS -->
+<section class="section">
+    <h2 class="section-title">Model 1: Pythagorean Expectation <span class="weight-tag">25%</span></h2>
+    <div class="formula-box">
+        <code>{{ pw.formula }}</code>
+        <small>Exponent = {{ pw.exponent }} (Bill James refined) · Home field adj = +{{ pw.home_field_adjustment }}</small>
+    </div>
+    <div class="workings-grid">
+        <div class="wg-team">
+            <div class="wg-label">{{ g.away_abbr }} (Away)</div>
+            <table class="stats-table">
+                <tr><td>Runs Scored (total)</td><td class="mono">{{ pw.away.runs_scored_total }}</td></tr>
+                <tr><td>Runs Allowed (total)</td><td class="mono">{{ pw.away.runs_allowed_total }}</td></tr>
+                <tr><td>Games Played</td><td class="mono">{{ pw.away.games_played }}</td></tr>
+                <tr><td>RS per Game</td><td class="mono">{{ pw.away.runs_scored_per_game }}</td></tr>
+                <tr><td>RA per Game</td><td class="mono">{{ pw.away.runs_allowed_per_game }}</td></tr>
+                <tr><td>RS^1.83</td><td class="mono">{{ pw.away.rs_exp }}</td></tr>
+                <tr><td>RA^1.83</td><td class="mono">{{ pw.away.ra_exp }}</td></tr>
+                <tr><td>Raw Pyth Win%</td><td class="mono accent">{{ pw.away.pyth_pct_raw }}</td></tr>
+                <tr><td>Adjusted Win%</td><td class="mono accent">{{ pw.away.pyth_pct_adjusted }}</td></tr>
+            </table>
+        </div>
+        <div class="wg-team">
+            <div class="wg-label">{{ g.home_abbr }} (Home)</div>
+            <table class="stats-table">
+                <tr><td>Runs Scored (total)</td><td class="mono">{{ pw.home.runs_scored_total }}</td></tr>
+                <tr><td>Runs Allowed (total)</td><td class="mono">{{ pw.home.runs_allowed_total }}</td></tr>
+                <tr><td>Games Played</td><td class="mono">{{ pw.home.games_played }}</td></tr>
+                <tr><td>RS per Game</td><td class="mono">{{ pw.home.runs_scored_per_game }}</td></tr>
+                <tr><td>RA per Game</td><td class="mono">{{ pw.home.runs_allowed_per_game }}</td></tr>
+                <tr><td>RS^1.83</td><td class="mono">{{ pw.home.rs_exp }}</td></tr>
+                <tr><td>RA^1.83</td><td class="mono">{{ pw.home.ra_exp }}</td></tr>
+                <tr><td>Raw Pyth Win%</td><td class="mono accent">{{ pw.home.pyth_pct_raw }}</td></tr>
+                <tr><td>Adjusted Win%</td><td class="mono accent">{{ pw.home.pyth_pct_adjusted }}</td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="model-result">
+        Pythagorean Result → {{ g.away_abbr }}: <strong>{{ (p.models.pythagorean.away_win_prob*100)|round(1) }}%</strong>
+        · {{ g.home_abbr }}: <strong>{{ (p.models.pythagorean.home_win_prob*100)|round(1) }}%</strong>
+    </div>
+</section>
+
+<!-- LOG5 WORKINGS -->
+<section class="section">
+    <h2 class="section-title">Model 2: Log5 Method <span class="weight-tag">35%</span></h2>
+    <div class="formula-box">
+        <code>{{ lw.formula }}</code>
+        <small>Home field boost applied: +{{ lw.home_field_boost }} to home team Win%</small>
+    </div>
+    <div class="workings-grid">
+        <div class="wg-team">
+            <div class="wg-label">{{ g.away_abbr }} (Away)</div>
+            <table class="stats-table">
+                <tr><td>Season W-L</td><td class="mono">{{ lw.away.wins }}-{{ lw.away.losses }}</td></tr>
+                <tr><td>Season Win%</td><td class="mono">{{ lw.away.win_pct_season }}</td></tr>
+                <tr><td>Adjusted Win% (−{{ lw.home_field_boost }})</td><td class="mono accent">{{ lw.away.win_pct_adjusted }}</td></tr>
+            </table>
+        </div>
+        <div class="wg-team">
+            <div class="wg-label">{{ g.home_abbr }} (Home)</div>
+            <table class="stats-table">
+                <tr><td>Season W-L</td><td class="mono">{{ lw.home.wins }}-{{ lw.home.losses }}</td></tr>
+                <tr><td>Season Win%</td><td class="mono">{{ lw.home.win_pct_season }}</td></tr>
+                <tr><td>Adjusted Win% (+{{ lw.home_field_boost }})</td><td class="mono accent">{{ lw.home.win_pct_adjusted }}</td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="formula-box secondary">
+        <table class="stats-table inline-table">
+            <tr><td>Numerator</td><td class="mono">WP_home − WP_home × WP_away = {{ lw.numerator }}</td></tr>
+            <tr><td>Denominator</td><td class="mono">WP_home + WP_away − 2 × WP_home × WP_away = {{ lw.denominator }}</td></tr>
+        </table>
+    </div>
+    <div class="model-result">
+        Log5 Result → {{ g.away_abbr }}: <strong>{{ (p.models.log5.away_win_prob*100)|round(1) }}%</strong>
+        · {{ g.home_abbr }}: <strong>{{ (p.models.log5.home_win_prob*100)|round(1) }}%</strong>
+    </div>
+</section>
+
+<!-- POISSON WORKINGS -->
+<section class="section">
+    <h2 class="section-title">Model 3: Poisson Regression <span class="weight-tag">40%</span></h2>
+    <div class="formula-box">
+        <code>{{ poiw.formula }}</code>
+        <small>League avg RPG = {{ poiw.league_avg_rpg }} · Home scoring boost = {{ poiw.home_run_boost }}×</small>
+    </div>
+    <div class="workings-grid">
+        <div class="wg-team">
+            <div class="wg-label">{{ g.away_abbr }} (Away)</div>
+            <table class="stats-table">
+                <tr><td>Offensive RPG</td><td class="mono">{{ poiw.away.offensive_rpg }}</td></tr>
+                <tr><td>Opponent Def RPG</td><td class="mono">{{ poiw.away.opponent_defensive_rpg }}</td></tr>
+                <tr><td>λ (Expected Runs)</td><td class="mono accent">{{ poiw.away.lambda }}</td></tr>
+                <tr><td>Most Likely Score</td><td class="mono">{{ poiw.away.most_likely_score }}</td></tr>
+            </table>
+        </div>
+        <div class="wg-team">
+            <div class="wg-label">{{ g.home_abbr }} (Home)</div>
+            <table class="stats-table">
+                <tr><td>Offensive RPG</td><td class="mono">{{ poiw.home.offensive_rpg }}</td></tr>
+                <tr><td>Opponent Def RPG</td><td class="mono">{{ poiw.home.opponent_defensive_rpg }}</td></tr>
+                <tr><td>λ (Expected Runs)</td><td class="mono accent">{{ poiw.home.lambda }}</td></tr>
+                <tr><td>Most Likely Score</td><td class="mono">{{ poiw.home.most_likely_score }}</td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="chart-container">
+        <canvas id="poissonChart"></canvas>
+    </div>
+    <div class="formula-box secondary">
+        <span>Tie probability (extra innings split 50/50): <strong class="mono">{{ poiw.tie_probability }}</strong></span>
+    </div>
+    <div class="model-result">
+        Poisson Result → {{ g.away_abbr }}: <strong>{{ (p.models.poisson.away_win_prob*100)|round(1) }}%</strong>
+        · {{ g.home_abbr }}: <strong>{{ (p.models.poisson.home_win_prob*100)|round(1) }}%</strong>
+    </div>
+</section>
+
+<!-- EDGE CALCULATION -->
+<section class="section">
+    <h2 class="section-title">Edge Calculation</h2>
+    <div class="formula-box">
+        <code>{{ e.workings.formula }}</code>
+        <small>{{ e.workings.vig_explanation }}</small>
+    </div>
+    <div class="edge-detail-grid">
+        <div class="edge-detail-team {% if e.away.is_value_bet %}value{% endif %}">
+            <div class="edt-name">{{ g.away_abbr }}</div>
+            <table class="stats-table">
+                <tr><td>Our Win Probability</td><td class="mono accent">{{ e.away.our_win_pct }}%</td></tr>
+                <tr><td>Our Implied Moneyline</td><td class="mono">{{ e.away.our_implied_ml }}</td></tr>
+                <tr><td>Market Implied Prob (de-vigged)</td><td class="mono">{{ e.away.market_implied_pct }}%</td></tr>
+                <tr><td>Edge Calculation</td><td class="mono">{{ e.workings.away_edge_calc }}</td></tr>
+                <tr><td>EV per $100 bet</td><td class="mono {% if e.away.expected_value_per_100 > 0 %}green{% else %}red{% endif %}">${{ e.away.expected_value_per_100 }}</td></tr>
+            </table>
+            <div class="edt-rec rec-{{ e.away.recommendation|lower }}">{{ e.away.recommendation }}</div>
+        </div>
+        <div class="edge-detail-team {% if e.home.is_value_bet %}value{% endif %}">
+            <div class="edt-name">{{ g.home_abbr }}</div>
+            <table class="stats-table">
+                <tr><td>Our Win Probability</td><td class="mono accent">{{ e.home.our_win_pct }}%</td></tr>
+                <tr><td>Our Implied Moneyline</td><td class="mono">{{ e.home.our_implied_ml }}</td></tr>
+                <tr><td>Market Implied Prob (de-vigged)</td><td class="mono">{{ e.home.market_implied_pct }}%</td></tr>
+                <tr><td>Edge Calculation</td><td class="mono">{{ e.workings.home_edge_calc }}</td></tr>
+                <tr><td>EV per $100 bet</td><td class="mono {% if e.home.expected_value_per_100 > 0 %}green{% else %}red{% endif %}">${{ e.home.expected_value_per_100 }}</td></tr>
+            </table>
+            <div class="edt-rec rec-{{ e.home.recommendation|lower }}">{{ e.home.recommendation }}</div>
+        </div>
+    </div>
+    <div class="formula-box secondary">
+        <small>Note: Market moneyline not yet entered — showing fair-value edge (0%). Enter real market odds to find true edge.</small>
+    </div>
+</section>
+
+<!-- RAW TEAM STATS -->
+<section class="section">
+    <h2 class="section-title">Raw Team Stats</h2>
+    <div class="workings-grid">
+        <div class="wg-team">
+            <div class="wg-label">{{ g.away_abbr }}</div>
+            <table class="stats-table">
+                <tr><td>ERA</td><td class="mono">{{ as.era }}</td></tr>
+                <tr><td>WHIP</td><td class="mono">{{ as.whip }}</td></tr>
+                <tr><td>Batting Average</td><td class="mono">{{ as.batting_avg }}</td></tr>
+                <tr><td>OPS</td><td class="mono">{{ as.ops }}</td></tr>
+                <tr><td>Runs Scored</td><td class="mono">{{ as.runs_scored|int }}</td></tr>
+                <tr><td>Runs Allowed</td><td class="mono">{{ as.runs_allowed|int }}</td></tr>
+                <tr><td>Win%</td><td class="mono">{{ as.win_pct }}</td></tr>
+            </table>
+        </div>
+        <div class="wg-team">
+            <div class="wg-label">{{ g.home_abbr }}</div>
+            <table class="stats-table">
+                <tr><td>ERA</td><td class="mono">{{ hs.era }}</td></tr>
+                <tr><td>WHIP</td><td class="mono">{{ hs.whip }}</td></tr>
+                <tr><td>Batting Average</td><td class="mono">{{ hs.batting_avg }}</td></tr>
+                <tr><td>OPS</td><td class="mono">{{ hs.ops }}</td></tr>
+                <tr><td>Runs Scored</td><td class="mono">{{ hs.runs_scored|int }}</td></tr>
+                <tr><td>Runs Allowed</td><td class="mono">{{ hs.runs_allowed|int }}</td></tr>
+                <tr><td>Win%</td><td class="mono">{{ hs.win_pct }}</td></tr>
+            </table>
+        </div>
+    </div>
+</section>
+
+<script>
+const dist = {{ p.models.poisson.workings.distribution | tojson }};
+const ctx = document.getElementById('poissonChart').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: dist.labels.map(l => l + ' runs'),
+        datasets: [
+            {
+                label: '{{ g.away_abbr }} Score Probability (%)',
+                data: dist.away_probs,
+                backgroundColor: 'rgba(99, 179, 237, 0.7)',
+                borderColor: 'rgba(99, 179, 237, 1)',
+                borderWidth: 1,
+            },
+            {
+                label: '{{ g.home_abbr }} Score Probability (%)',
+                data: dist.home_probs,
+                backgroundColor: 'rgba(0, 255, 136, 0.5)',
+                borderColor: 'rgba(0, 255, 136, 1)',
+                borderWidth: 1,
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { labels: { color: '#c9d1d9', font: { family: 'Space Grotesk' } } },
+            title: {
+                display: true,
+                text: 'Poisson Run Scoring Distribution',
+                color: '#e6edf3',
+                font: { size: 14, family: 'Space Grotesk' }
+            }
+        },
+        scales: {
+            x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+            y: {
+                ticks: { color: '#8b949e', callback: v => v + '%' },
+                grid: { color: '#21262d' }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
